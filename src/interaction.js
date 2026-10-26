@@ -1,45 +1,45 @@
-// interaction.js — mouse and keyboard input.
+// interaction.js — input mouse dan keyboard.
 //
-// Hover and click both use THREE.Raycaster: a ray is shot from the camera
-// through the mouse position, and the first artifact it hits is the one under
-// the pointer. Clicks are told apart from camera drags, because releasing the
-// mouse after orbiting the camera also fires a "click" event.
+// Hover dan klik sama-sama memakai THREE.Raycaster: sebuah sinar ditembakkan
+// dari kamera melewati posisi mouse, dan artefak pertama yang terkena sinar
+// adalah yang berada di bawah kursor. Klik dibedakan dari drag kamera, karena
+// melepas mouse setelah memutar kamera juga memicu event "click".
 
 import * as THREE from "three";
 
-/** A press that moves more than this many pixels is a drag, not a click. */
+/** Tekanan yang bergeser lebih dari sekian piksel dianggap drag, bukan klik. */
 const DRAG_THRESHOLD_PX = 5;
 
 /**
- * Connects pointer and keyboard input to the museum.
+ * Menyambungkan input pointer dan keyboard ke museum.
  *
  * @param {object} options
  * @param {HTMLCanvasElement} options.canvas
  * @param {THREE.Camera} options.camera
- * @param {object[]} options.exhibits From buildExhibits().
- * @param {object} options.museum From createMuseum().
- * @returns {{ dispose: () => void }} Call dispose() to remove every listener.
+ * @param {object[]} options.exhibits Dari buildExhibits().
+ * @param {object} options.museum Dari createMuseum().
+ * @returns {{ dispose: () => void }} Panggil dispose() untuk melepas semua listener.
  */
 export function createInteraction({ canvas, camera, exhibits, museum }) {
   const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2(); // mouse position in NDC (-1..1)
-  // Rays are tested against each exhibit's invisible hit box, not the artifact
-  // meshes — see createHitArea() in exhibits.js for why.
+  const pointer = new THREE.Vector2(); // posisi mouse dalam NDC (-1..1)
+  // Sinar diuji ke kotak hit area tak terlihat milik tiap exhibit, bukan ke
+  // mesh artefaknya — alasannya ada di createHitArea() di exhibits.js.
   const targets = exhibits.map((exhibit) => exhibit.hitArea);
 
-  /** Where the current press started, or null when no button is down. */
+  /** Tempat tekanan saat ini dimulai, atau null bila tidak ada tombol yang ditekan. */
   let press = null;
 
   /**
-   * Whether the press that just ended was a drag. Kept separately because the
-   * browser fires "pointerup" (which clears `press`) BEFORE "click".
+   * Apakah tekanan yang baru saja berakhir adalah drag. Disimpan terpisah
+   * karena browser mengirim "pointerup" (yang mengosongkan `press`) SEBELUM "click".
    */
   let lastPressWasDrag = false;
 
   /**
-   * Converts a mouse event's pixel position into NDC (Normalized Device
-   * Coordinates): x and y from -1 to 1 with +y pointing UP — the space the
-   * raycaster expects. Measured against the canvas, not the whole window.
+   * Mengubah posisi piksel event mouse menjadi NDC (Normalized Device
+   * Coordinates): x dan y dari -1 sampai 1 dengan +y mengarah KE ATAS — ruang
+   * koordinat yang diharapkan raycaster. Diukur terhadap canvas, bukan seluruh jendela.
    *
    * @param {PointerEvent | MouseEvent} event
    */
@@ -50,14 +50,15 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   }
 
   /**
-   * Finds the exhibit under the pointer.
+   * Mencari exhibit yang berada di bawah pointer.
    *
-   * setFromCamera() builds a ray that starts at the camera and passes through
-   * the pointer's NDC position. intersectObjects() returns every hit, nearest
-   * first, so the first result is the exhibit in front. Each hit box stores
-   * its exhibit's index in userData, which maps the hit back to the exhibit.
+   * setFromCamera() membuat sinar yang berawal dari kamera dan melewati posisi
+   * NDC pointer. intersectObjects() mengembalikan semua yang terkena, dimulai
+   * dari yang terdekat, jadi hasil pertama adalah exhibit paling depan. Setiap
+   * hit box menyimpan indeks exhibit-nya di userData, yang memetakan hasil
+   * tabrakan kembali ke exhibit-nya.
    *
-   * @returns {object|null} The exhibit, or null if the ray hits no artifact.
+   * @returns {object|null} Exhibit-nya, atau null bila sinar tidak mengenai artefak.
    */
   function pickExhibit() {
     raycaster.setFromCamera(pointer, camera);
@@ -66,19 +67,19 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   }
 
   /**
-   * Hover: re-checks what is under the pointer as it moves.
-   * Skipped while a button is held, so hover does not flicker during a drag.
+   * Hover: memeriksa ulang apa yang ada di bawah pointer saat pointer bergerak.
+   * Dilewati selama tombol ditahan, supaya hover tidak berkedip saat drag.
    *
    * @param {PointerEvent} event
    */
   function onPointerMove(event) {
     if (press) {
-      // Once the pointer has travelled far enough, this press is a drag.
+      // Begitu pointer bergeser cukup jauh, tekanan ini adalah drag.
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > DRAG_THRESHOLD_PX) press.dragged = true;
       return;
     }
 
-    // Over a UI panel rather than the canvas: nothing in the scene is hovered.
+    // Di atas panel UI, bukan canvas: tidak ada objek scene yang di-hover.
     if (event.target !== canvas) {
       museum.setHovered(null);
       return;
@@ -91,7 +92,7 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   }
 
   /**
-   * Remembers where a press started, to measure later whether it became a drag.
+   * Mengingat tempat tekanan dimulai, untuk mengukur nanti apakah ia menjadi drag.
    *
    * @param {PointerEvent} event
    */
@@ -100,8 +101,8 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   }
 
   /**
-   * Click: selects the artifact under the pointer — unless the press was a
-   * camera drag, or it was not the left mouse button.
+   * Klik: memilih artefak di bawah pointer — kecuali tekanannya adalah drag
+   * kamera, atau bukan tombol kiri mouse.
    *
    * @param {MouseEvent} event
    */
@@ -117,23 +118,24 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   }
 
   /**
-   * Ends the press wherever the button is released — even outside the canvas,
-   * which would otherwise leave `press` set and freeze hover detection.
+   * Mengakhiri tekanan di mana pun tombol dilepas — bahkan di luar canvas,
+   * yang bila tidak ditangani akan membiarkan `press` tetap terisi dan
+   * membekukan deteksi hover.
    */
   function onPointerUp() {
     lastPressWasDrag = press?.dragged ?? false;
     press = null;
   }
 
-  /** Clears the hover highlight when the pointer leaves the canvas. */
+  /** Menghapus sorotan hover saat pointer meninggalkan canvas. */
   function onPointerLeave() {
     if (!press) museum.setHovered(null);
     canvas.style.cursor = "";
   }
 
   /**
-   * Keyboard shortcuts: Esc returns from inspect mode, R resets the visit.
-   * `event.repeat` is ignored so holding a key fires the action only once.
+   * Pintasan keyboard: Esc kembali dari mode inspect, R mengatur ulang kunjungan.
+   * `event.repeat` diabaikan supaya menahan tombol hanya memicu aksi sekali.
    *
    * @param {KeyboardEvent} event
    */
@@ -143,8 +145,8 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
     if (event.code === "KeyR") museum.reset();
   }
 
-  // pointermove is watched on window (capture phase) so a drag is still
-  // measured even when OrbitControls captures the pointer during it.
+  // pointermove dipantau di window (fase capture) supaya drag tetap terukur
+  // bahkan saat OrbitControls menangkap pointer selama drag.
   window.addEventListener("pointermove", onPointerMove, true);
   window.addEventListener("pointerup", onPointerUp, true);
   canvas.addEventListener("pointerdown", onPointerDown);
@@ -152,7 +154,7 @@ export function createInteraction({ canvas, camera, exhibits, museum }) {
   canvas.addEventListener("pointerleave", onPointerLeave);
   window.addEventListener("keydown", onKeyDown);
 
-  /** Removes every listener added above. */
+  /** Melepas semua listener yang ditambahkan di atas. */
   function dispose() {
     window.removeEventListener("pointermove", onPointerMove, true);
     window.removeEventListener("pointerup", onPointerUp, true);

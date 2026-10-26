@@ -1,13 +1,13 @@
-// effects.js — visual effects (VFX).
+// effects.js — efek visual (VFX).
 //
-//   1. Dust     — floating specks of dust drifting through the hall (THREE.Points).
-//   2. Halos    — a glowing ring on each pedestal top; it pulses, brightens on
-//                 hover and turns gold once the artifact has been inspected.
-//   3. Sparkle  — a short burst of particles the first time an artifact is inspected.
-//   4. Celebration — a large multicolour burst when the exhibition is complete.
+//   1. Dust        — butiran debu yang melayang di aula (THREE.Points).
+//   2. Halos       — cincin bercahaya di atas tiap pedestal; berdenyut, menyala lebih
+//                    terang saat hover, dan menjadi emas setelah artefak diperiksa.
+//   3. Sparkle     — ledakan partikel singkat saat artefak diperiksa untuk pertama kali.
+//   4. Celebration — ledakan besar multiwarna saat pameran selesai.
 //
-// All of them use additive blending: their colour is ADDED to what is behind
-// them, so overlapping particles get brighter, the way real light does.
+// Semuanya memakai additive blending: warnanya DITAMBAHKAN ke apa yang ada di
+// belakangnya, sehingga partikel yang bertumpuk makin terang, seperti cahaya sungguhan.
 
 import * as THREE from "three";
 
@@ -16,16 +16,16 @@ const DUST_BOUNDS = { minX: -10, maxX: 10, minY: 0, maxY: 6, minZ: -7, maxZ: 5 }
 
 const HALO_COLORS = { idle: new THREE.Color(0x5fa8ff), visited: new THREE.Color(0xffc94a) };
 
-const GRAVITY = 3; // m/s² pulling burst particles down
+const GRAVITY = 3; // m/s² yang menarik partikel ledakan ke bawah
 
 /**
- * Builds a material for glowing particles.
+ * Membuat material untuk partikel bercahaya.
  *
- * - AdditiveBlending: colours are added to the background, so they glow.
- * - depthWrite false: particles do not hide each other, so they blend smoothly
- *   instead of drawing ugly black squares where they overlap.
+ * - AdditiveBlending: warna ditambahkan ke latar, sehingga tampak berpendar.
+ * - depthWrite false: partikel tidak saling menutupi, jadi menyatu halus
+ *   alih-alih menggambar kotak hitam jelek di tempat mereka bertumpuk.
  *
- * @param {object} parameters Extra PointsMaterial options (size, color, …).
+ * @param {object} parameters Opsi PointsMaterial tambahan (size, color, …).
  * @returns {THREE.PointsMaterial}
  */
 function glowMaterial(parameters) {
@@ -33,13 +33,13 @@ function glowMaterial(parameters) {
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    sizeAttenuation: true, // farther particles appear smaller, like real objects
+    sizeAttenuation: true, // partikel yang lebih jauh tampak lebih kecil, seperti benda nyata
     ...parameters,
   });
 }
 
 /**
- * Returns a random number between min and max.
+ * Mengembalikan bilangan acak antara min dan max.
  *
  * @param {number} min
  * @param {number} max
@@ -50,9 +50,9 @@ function random(min, max) {
 }
 
 /**
- * Creates the dust: one THREE.Points object holding DUST_COUNT particles.
- * Every particle is just a position in a Float32Array; the GPU draws each one
- * as a small square sprite. One draw call for all 400 particles.
+ * Membuat debu: satu objek THREE.Points yang berisi DUST_COUNT partikel.
+ * Setiap partikel hanyalah sebuah posisi di Float32Array; GPU menggambar
+ * masing-masing sebagai sprite persegi kecil. Satu draw call untuk 400 partikel.
  *
  * @returns {{ points: THREE.Points, speeds: Float32Array }}
  */
@@ -64,7 +64,7 @@ function createDust() {
     positions[i * 3] = random(DUST_BOUNDS.minX, DUST_BOUNDS.maxX);
     positions[i * 3 + 1] = random(DUST_BOUNDS.minY, DUST_BOUNDS.maxY);
     positions[i * 3 + 2] = random(DUST_BOUNDS.minZ, DUST_BOUNDS.maxZ);
-    speeds[i] = random(0.05, 0.2); // metres per second, upward
+    speeds[i] = random(0.05, 0.2); // meter per detik, ke atas
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -75,8 +75,8 @@ function createDust() {
 }
 
 /**
- * Creates the glowing ring that lies on a pedestal top. It is a child of the
- * exhibit group, so it automatically sits on the right pedestal.
+ * Membuat cincin bercahaya yang terbaring di atas pedestal. Ia adalah child dari
+ * group exhibit, jadi otomatis berada di pedestal yang benar.
  *
  * @returns {THREE.Mesh}
  */
@@ -92,17 +92,17 @@ function createHalo() {
       side: THREE.DoubleSide,
     }),
   );
-  // RingGeometry is built standing up; -90° about X lays it flat on the pedestal.
+  // RingGeometry dibuat berdiri tegak; -90° pada sumbu X membaringkannya di atas pedestal.
   halo.rotation.x = -Math.PI / 2;
-  halo.position.y = 1.005; // a hair above the pedestal top to avoid flickering (z-fighting)
+  halo.position.y = 1.005; // sedikit di atas permukaan pedestal agar tidak berkedip (z-fighting)
   return halo;
 }
 
 /**
- * Creates the visual effects and returns functions to trigger and animate them.
+ * Membuat efek visual dan mengembalikan fungsi untuk memicu dan menganimasikannya.
  *
  * @param {THREE.Scene} scene
- * @param {object[]} exhibits From buildExhibits().
+ * @param {object[]} exhibits Dari buildExhibits().
  * @returns {{
  *   sparkle: (exhibit: object) => void,
  *   celebrate: () => void,
@@ -120,19 +120,19 @@ export function createEffects(scene, exhibits) {
     return halo;
   });
 
-  /** Particle bursts still alive; each removes itself when its life ends. */
+  /** Ledakan partikel yang masih hidup; masing-masing menghapus dirinya saat umurnya habis. */
   const bursts = [];
 
   /**
-   * Spawns one burst of particles that fly outwards, fall under gravity and fade.
+   * Memunculkan satu ledakan partikel yang melesat keluar, jatuh karena gravitasi, dan memudar.
    *
-   * @param {THREE.Vector3} origin World position the particles start from.
+   * @param {THREE.Vector3} origin Posisi dunia tempat partikel mulai.
    * @param {object} options
-   * @param {number} options.count   Number of particles.
-   * @param {number} options.speed   Starting speed, m/s.
-   * @param {number} options.life    Seconds until the burst fades out.
-   * @param {number} options.size    Particle size.
-   * @param {THREE.Color[]} options.palette Colours picked at random per particle.
+   * @param {number} options.count   Jumlah partikel.
+   * @param {number} options.speed   Kecepatan awal, m/s.
+   * @param {number} options.life    Detik sampai ledakan memudar habis.
+   * @param {number} options.size    Ukuran partikel.
+   * @param {THREE.Color[]} options.palette Warna yang dipilih acak per partikel.
    */
   function spawnBurst(origin, { count, speed, life, size, palette }) {
     const positions = new Float32Array(count * 3);
@@ -142,7 +142,7 @@ export function createEffects(scene, exhibits) {
     for (let i = 0; i < count; i++) {
       positions.set([origin.x, origin.y, origin.z], i * 3);
 
-      // A random direction on a sphere, biased upward so the burst "pops".
+      // Arah acak pada sebuah bola, condong ke atas supaya ledakannya "melompat".
       const direction = new THREE.Vector3(random(-1, 1), random(0.2, 1.2), random(-1, 1)).normalize();
       velocities.set([direction.x * speed, direction.y * speed, direction.z * speed], i * 3);
 
@@ -160,7 +160,7 @@ export function createEffects(scene, exhibits) {
   }
 
   /**
-   * Small golden sparkle above an artifact, the first time it is inspected.
+   * Kilauan emas kecil di atas artefak, saat ia diperiksa untuk pertama kali.
    *
    * @param {object} exhibit
    */
@@ -175,7 +175,7 @@ export function createEffects(scene, exhibits) {
     });
   }
 
-  /** Big multicolour burst in the middle of the hall for exhibition completion. */
+  /** Ledakan besar multiwarna di tengah aula saat pameran selesai. */
   function celebrate() {
     spawnBurst(new THREE.Vector3(0, 2.5, -3), {
       count: 450,
@@ -187,7 +187,7 @@ export function createEffects(scene, exhibits) {
   }
 
   /**
-   * Removes one burst from the scene and frees its GPU memory.
+   * Menghapus satu ledakan dari scene dan membebaskan memori GPU-nya.
    *
    * @param {{ points: THREE.Points }} burst
    */
@@ -197,17 +197,17 @@ export function createEffects(scene, exhibits) {
     burst.points.material.dispose();
   }
 
-  /** Removes every burst immediately (used when the visit is reset). */
+  /** Menghapus semua ledakan seketika (dipakai saat kunjungan di-reset). */
   function clearBursts() {
     for (const burst of bursts) removeBurst(burst);
     bursts.length = 0;
   }
 
   /**
-   * Moves the dust upward and wraps it back to the floor when it reaches the top.
+   * Menggerakkan debu ke atas dan memutarnya kembali ke lantai saat mencapai atap.
    *
-   * @param {number} dt Seconds since the previous frame.
-   * @param {number} elapsed Total seconds, used for a gentle sideways sway.
+   * @param {number} dt Detik sejak frame sebelumnya.
+   * @param {number} elapsed Total detik, dipakai untuk ayunan halus ke samping.
    */
   function updateDust(dt, elapsed) {
     const positions = dust.points.geometry.attributes.position;
@@ -217,16 +217,16 @@ export function createEffects(scene, exhibits) {
       positions.setY(i, y);
       positions.setX(i, positions.getX(i) + Math.sin(elapsed * 0.5 + i) * 0.02 * dt);
     }
-    // Tells three.js the array changed, so it re-uploads it to the GPU buffer.
+    // Memberi tahu three.js bahwa array berubah, sehingga ia mengunggahnya ulang ke buffer GPU.
     positions.needsUpdate = true;
   }
 
   /**
-   * Pulses each halo and sets its colour and brightness from the visit state:
-   * gold once visited, blue otherwise, and brighter while hovered.
+   * Mendenyutkan tiap halo dan mengatur warna serta kecerahannya dari state kunjungan:
+   * emas setelah dikunjungi, biru bila belum, dan lebih terang saat di-hover.
    *
-   * @param {number} elapsed Total seconds.
-   * @param {{ hovered: object|null, visited: Set<number> }} snapshot From museum.getSnapshot().
+   * @param {number} elapsed Total detik.
+   * @param {{ hovered: object|null, visited: Set<number> }} snapshot Dari museum.getSnapshot().
    */
   function updateHalos(elapsed, snapshot) {
     halos.forEach((halo, index) => {
@@ -234,16 +234,16 @@ export function createEffects(scene, exhibits) {
       const hovered = snapshot.hovered?.index === index;
 
       halo.material.color.copy(visited ? HALO_COLORS.visited : HALO_COLORS.idle);
-      // A sine wave between 0 and 1, offset per halo so they do not pulse in unison.
+      // Gelombang sinus antara 0 dan 1, digeser per halo supaya tidak berdenyut serempak.
       const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.4 + index);
       halo.material.opacity = (hovered ? 0.75 : 0.3) + pulse * 0.25;
     });
   }
 
   /**
-   * Moves every live burst particle (velocity + gravity) and fades it out.
+   * Menggerakkan setiap partikel ledakan yang hidup (kecepatan + gravitasi) dan memudarkannya.
    *
-   * @param {number} dt Seconds since the previous frame.
+   * @param {number} dt Detik sejak frame sebelumnya.
    */
   function updateBursts(dt) {
     for (let b = bursts.length - 1; b >= 0; b--) {
@@ -272,11 +272,11 @@ export function createEffects(scene, exhibits) {
   }
 
   /**
-   * Advances every effect by one frame.
+   * Memajukan setiap efek sebanyak satu frame.
    *
-   * @param {number} dt Seconds since the previous frame.
-   * @param {number} elapsed Total seconds since start.
-   * @param {object} snapshot From museum.getSnapshot().
+   * @param {number} dt Detik sejak frame sebelumnya.
+   * @param {number} elapsed Total detik sejak start.
+   * @param {object} snapshot Dari museum.getSnapshot().
    */
   function update(dt, elapsed, snapshot) {
     updateDust(dt, elapsed);

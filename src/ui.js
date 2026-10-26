@@ -1,13 +1,14 @@
-// ui.js — the HTML interface drawn over the canvas (HUD, panels, overlays).
+// ui.js — antarmuka HTML yang digambar di atas canvas (HUD, panel, overlay).
 //
-// The UI never changes the 3D scene itself. Buttons call the callbacks passed
-// in from main.js, and render() redraws the interface from a museum snapshot.
-// Text is always written with textContent (never innerHTML), so no string can
-// ever be interpreted as HTML.
+// UI tidak pernah mengubah scene 3D itu sendiri. Tombol memanggil callback yang
+// dikirim dari main.js, dan render() menggambar ulang antarmuka dari snapshot
+// museum. Teks selalu ditulis dengan textContent (tidak pernah innerHTML),
+// sehingga string apa pun tidak akan pernah ditafsirkan sebagai HTML.
 
 /**
- * Finds an element by id and fails loudly if index.html does not have it,
- * so a typo shows up immediately instead of as a silent "cannot read null".
+ * Mencari elemen berdasarkan id dan gagal dengan jelas bila index.html tidak
+ * memilikinya, sehingga salah ketik langsung terlihat alih-alih muncul sebagai
+ * "cannot read null" yang senyap.
  *
  * @param {string} id
  * @returns {HTMLElement}
@@ -19,7 +20,7 @@ function byId(id) {
 }
 
 /**
- * Shows or hides an element through the "hidden" CSS class.
+ * Menampilkan atau menyembunyikan elemen lewat class CSS "hidden".
  *
  * @param {HTMLElement} element
  * @param {boolean} visible
@@ -28,7 +29,7 @@ function setVisible(element, visible) {
   element.classList.toggle("hidden", !visible);
 }
 
-/** Instruction line shown in the HUD for each mode. */
+/** Baris petunjuk yang ditampilkan di HUD untuk tiap mode. */
 const HINTS = {
   explore: "Arahkan kursor ke artefak, lalu klik untuk memeriksanya.",
   inspect: "Drag untuk memutar pandangan. Esc atau tombol Kembali untuk keluar.",
@@ -36,17 +37,17 @@ const HINTS = {
 };
 
 /**
- * Builds the interface and wires its buttons.
+ * Membangun antarmuka dan menyambungkan tombol-tombolnya.
  *
- * The UI is created BEFORE the 3D models finish loading (it shows the loading
- * percentage), so the checklist is built from plain titles, not from exhibits.
+ * UI dibuat SEBELUM model 3D selesai dimuat (ia menampilkan persen loading),
+ * jadi checklist dibangun dari judul biasa, bukan dari exhibit.
  *
  * @param {object} options
- * @param {string[]} options.titles      Artifact titles, in exhibit order — for the checklist.
- * @param {() => void} options.onEnter   "Masuk Museum" pressed.
- * @param {() => void} options.onBack    "Kembali" pressed.
- * @param {() => void} options.onReset   "Reset" / "Jelajahi Lagi" pressed.
- * @param {(value: number) => void} options.onRoughness Slider moved (0–1).
+ * @param {string[]} options.titles      Judul artefak, sesuai urutan exhibit — untuk checklist.
+ * @param {() => void} options.onEnter   "Masuk Museum" ditekan.
+ * @param {() => void} options.onBack    "Kembali" ditekan.
+ * @param {() => void} options.onReset   "Reset" / "Jelajahi Lagi" ditekan.
+ * @param {(value: number) => void} options.onRoughness Slider digeser (0–1).
  * @returns {{ setLoading: (percent: number) => void, showError: (message: string) => void,
  *             hideLoading: () => void, render: (snapshot: object) => void }}
  */
@@ -71,7 +72,7 @@ export function createUI({ titles, onEnter, onBack, onReset, onRoughness }) {
     complete: byId("complete"),
   };
 
-  // One checklist row per artifact; render() ticks them off.
+  // Satu baris checklist per artefak; render() mencentangnya.
   const checklistItems = titles.map((title) => {
     const item = document.createElement("li");
     item.textContent = title;
@@ -83,11 +84,11 @@ export function createUI({ titles, onEnter, onBack, onReset, onRoughness }) {
   byId("back-button").addEventListener("click", onBack);
   byId("reset-button").addEventListener("click", onReset);
   byId("restart-button").addEventListener("click", onReset);
-  // "input" fires continuously while dragging, so the material updates live.
+  // "input" terpicu terus-menerus saat slider digeser, jadi material berubah secara langsung.
   elements.slider.addEventListener("input", () => onRoughness(Number(elements.slider.value)));
 
   /**
-   * Updates the loading screen's percentage.
+   * Memperbarui persentase di layar loading.
    *
    * @param {number} percent 0–100.
    */
@@ -96,7 +97,7 @@ export function createUI({ titles, onEnter, onBack, onReset, onRoughness }) {
   }
 
   /**
-   * Replaces the loading text with an error message (e.g. the GLB is missing).
+   * Mengganti teks loading dengan pesan error (misalnya GLB tidak ada).
    *
    * @param {string} message
    */
@@ -104,15 +105,15 @@ export function createUI({ titles, onEnter, onBack, onReset, onRoughness }) {
     elements.loading.querySelector("p").textContent = message;
   }
 
-  /** Hides the loading screen once the collection is ready. */
+  /** Menyembunyikan layar loading setelah koleksi siap. */
   function hideLoading() {
     setVisible(elements.loading, false);
   }
 
   /**
-   * Redraws the whole interface from the museum's current state.
+   * Menggambar ulang seluruh antarmuka dari state museum saat ini.
    *
-   * @param {object} snapshot From museum.getSnapshot().
+   * @param {object} snapshot Dari museum.getSnapshot().
    */
   function render(snapshot) {
     const { mode, hovered, current, visited, total, material } = snapshot;

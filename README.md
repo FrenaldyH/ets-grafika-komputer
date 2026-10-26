@@ -1,4 +1,4 @@
-# Hall of Relics — Museum Artefak Kuno
+# Hall of Relics: Museum Artefak Kuno
 
 UTS Grafika Komputer (EF234504) · Three.js Interactive 3D Project · **Topik 3: Interactive Museum**
 
@@ -11,7 +11,7 @@ UTS Grafika Komputer (EF234504) · Three.js Interactive 3D Project · **Topik 3:
 | Nama | NRP |
 | --- | --- |
 | Frenaldy Bestabba Hasugian | 5025241156 |
-| Himawan Rakha Bhadra | _(NRP menyusul)_ |
+| Himawan Rakha Bhadra | 5025241028 |
 
 ## Deskripsi
 

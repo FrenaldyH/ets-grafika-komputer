@@ -1,81 +1,81 @@
-// museum.js — the experience's state and camera choreography.
+// museum.js — state pengalaman dan koreografi kamera.
 //
-// The visit is a small state machine:
+// Kunjungan adalah state machine kecil:
 //
 //   intro ──enter()──► explore ──inspect()──► inspect
 //                         ▲                      │
 //                         └──────── back() ──────┘
-//   explore ──(all artifacts inspected, after back())──► complete
-//   any state ──reset()──► intro
+//   explore ──(semua artefak diperiksa, setelah back())──► complete
+//   state apa pun ──reset()──► intro
 //
-// This module owns that state, moves the camera between views, and tells the
-// rest of the app (UI, effects) when something changed through `hooks`.
+// Modul ini memegang state tersebut, memindahkan kamera antar tampilan, dan
+// memberi tahu bagian lain aplikasi (UI, effects) saat ada perubahan lewat `hooks`.
 
 import * as THREE from "three";
 import { restorePrimaryRoughness, setHighlight, setPrimaryRoughness, readPrimaryMaterial } from "./exhibits.js";
 
-/** Camera views: where the camera sits (position) and what it looks at (target). */
+/** Tampilan kamera: posisi kamera (position) dan apa yang dilihatnya (target). */
 const VIEWS = {
   intro: { position: new THREE.Vector3(0, 9, 16), target: new THREE.Vector3(0, 1, -3) },
   overview: { position: new THREE.Vector3(0, 6, 10), target: new THREE.Vector3(0, 1, -2.5) },
 };
 
-/** How long a camera flight takes, in seconds. */
+/** Lama satu penerbangan kamera, dalam detik. */
 const FLIGHT_SECONDS = 1.2;
 
-/** In inspect mode the camera stays this far from the artifact. */
+/** Di mode inspect, kamera tetap sejauh ini dari artefak. */
 const INSPECT_DISTANCE = 2.6;
 
-/** OrbitControls limits per mode: wide while exploring, close while inspecting. */
+/** Batas OrbitControls per mode: lebar saat menjelajah, dekat saat memeriksa. */
 const ORBIT_LIMITS = {
   explore: { minDistance: 4, maxDistance: 16, minPolarAngle: 0.35, maxPolarAngle: 1.35 },
   inspect: { minDistance: 1.4, maxDistance: 4, minPolarAngle: 0.2, maxPolarAngle: 1.6 },
 };
 
 /**
- * Smooth start and smooth stop for camera flights (ease-in-out cubic).
- * Moving at a constant speed would start and stop with a visible jerk.
+ * Awal yang mulus dan akhir yang mulus untuk penerbangan kamera (ease-in-out cubic).
+ * Bergerak dengan kecepatan konstan akan memulai dan berhenti dengan sentakan yang terlihat.
  *
- * @param {number} t Progress 0–1.
- * @returns {number} Eased progress 0–1.
+ * @param {number} t Progres 0–1.
+ * @returns {number} Progres yang sudah di-ease, 0–1.
  */
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
 /**
- * Creates the museum state machine.
+ * Membuat state machine museum.
  *
  * @param {object} options
  * @param {THREE.PerspectiveCamera} options.camera
  * @param {import("three/addons/controls/OrbitControls.js").OrbitControls} options.controls
- * @param {object[]} options.exhibits From buildExhibits().
- * @param {object} options.hooks Callbacks so other modules can react:
- * @param {(snapshot: object) => void} options.hooks.onChange       Any visible state changed.
- * @param {(exhibit: object) => void}   options.hooks.onFirstVisit   An artifact was inspected for the first time.
- * @param {() => void}                  options.hooks.onComplete     Every artifact has been inspected.
- * @param {() => void}                  options.hooks.onReset        The visit was reset.
- * @returns {object} The public API (see the `return` at the bottom).
+ * @param {object[]} options.exhibits Dari buildExhibits().
+ * @param {object} options.hooks Callback supaya modul lain bisa bereaksi:
+ * @param {(snapshot: object) => void} options.hooks.onChange       Ada state yang terlihat berubah.
+ * @param {(exhibit: object) => void}   options.hooks.onFirstVisit   Sebuah artefak diperiksa untuk pertama kali.
+ * @param {() => void}                  options.hooks.onComplete     Semua artefak sudah diperiksa.
+ * @param {() => void}                  options.hooks.onReset        Kunjungan diatur ulang.
+ * @returns {object} API publiknya (lihat `return` di bagian bawah).
  */
 export function createMuseum({ camera, controls, exhibits, hooks }) {
   const state = {
     mode: "intro", // "intro" | "explore" | "inspect" | "complete"
-    hovered: null, // exhibit under the pointer (explore mode only)
-    current: null, // exhibit being inspected
-    visited: new Set(), // indexes of exhibits already inspected
+    hovered: null, // exhibit di bawah pointer (hanya di mode explore)
+    current: null, // exhibit yang sedang diperiksa
+    visited: new Set(), // indeks exhibit yang sudah diperiksa
   };
 
-  /** The camera flight in progress, or null when the camera is free. */
+  /** Penerbangan kamera yang sedang berlangsung, atau null bila kamera bebas. */
   let flight = null;
 
   // ------------------------------------------------------------------
-  // CAMERA
+  // KAMERA
   // ------------------------------------------------------------------
 
   /**
-   * Places the camera instantly (no animation) — used at start-up and reset.
-   * controls.update() is deliberately NOT called: it would clamp the camera to
-   * maxDistance, and the intro view sits farther away than that limit.
+   * Menempatkan kamera seketika (tanpa animasi) — dipakai saat start dan reset.
+   * controls.update() sengaja TIDAK dipanggil: ia akan menjepit kamera ke
+   * maxDistance, padahal tampilan intro berada lebih jauh dari batas itu.
    *
    * @param {{ position: THREE.Vector3, target: THREE.Vector3 }} view
    */
@@ -86,12 +86,12 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Starts an animated camera flight. The flight itself advances in update().
-   * OrbitControls is switched off during the flight so a stray drag cannot
-   * fight the animation; it is switched back on when the camera arrives.
+   * Memulai penerbangan kamera beranimasi. Penerbangannya sendiri berjalan di update().
+   * OrbitControls dimatikan selama penerbangan supaya drag yang tidak sengaja
+   * tidak berebut dengan animasi; dinyalakan lagi saat kamera tiba.
    *
-   * @param {THREE.Vector3} position Where the camera should end up.
-   * @param {THREE.Vector3} target   What it should be looking at when it arrives.
+   * @param {THREE.Vector3} position Tempat kamera berakhir.
+   * @param {THREE.Vector3} target   Yang harus dilihat kamera saat tiba.
    */
   function flyTo(position, target) {
     flight = {
@@ -105,7 +105,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Applies one of the ORBIT_LIMITS presets to OrbitControls.
+   * Menerapkan salah satu preset ORBIT_LIMITS ke OrbitControls.
    *
    * @param {"explore" | "inspect"} preset
    */
@@ -114,17 +114,17 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Works out the inspect view for an exhibit: the camera is placed in front
-   * of the artifact (on the side the plaque faces), slightly above it.
+   * Menghitung tampilan inspect untuk sebuah exhibit: kamera ditaruh di depan
+   * artefak (di sisi yang dihadapi plakat), sedikit di atasnya.
    *
    * @param {object} exhibit
    * @returns {{ position: THREE.Vector3, target: THREE.Vector3 }}
    */
   function inspectViewFor(exhibit) {
-    // The centre of the artifact's bounding box, in world coordinates.
+    // Titik tengah bounding box artefak, dalam koordinat dunia.
     const target = new THREE.Box3().setFromObject(exhibit.artifact).getCenter(new THREE.Vector3());
 
-    // The exhibit group's +Z axis points at the visitor (see buildExhibits).
+    // Sumbu +Z group exhibit menghadap pengunjung (lihat buildExhibits).
     const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(exhibit.group.quaternion);
     const position = target.clone().addScaledVector(forward, INSPECT_DISTANCE).add(new THREE.Vector3(0, 0.6, 0));
 
@@ -136,7 +136,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   // ------------------------------------------------------------------
 
   /**
-   * A plain-data picture of the current state, for the UI.
+   * Potret data biasa dari state saat ini, untuk UI.
    *
    * @returns {{ mode: string, hovered: object|null, current: object|null,
    *             visited: Set<number>, total: number,
@@ -153,14 +153,14 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
     };
   }
 
-  /** Tells listeners (the UI) that something visible changed. */
+  /** Memberi tahu listener (UI) bahwa ada yang berubah dan terlihat. */
   function emit() {
     hooks.onChange(getSnapshot());
   }
 
   /**
-   * True when the visitor may hover and click artifacts: only while exploring
-   * and never mid-flight.
+   * True bila pengunjung boleh meng-hover dan mengklik artefak: hanya saat
+   * menjelajah dan tidak pernah di tengah penerbangan.
    *
    * @returns {boolean}
    */
@@ -169,10 +169,10 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   // ------------------------------------------------------------------
-  // ACTIONS
+  // AKSI
   // ------------------------------------------------------------------
 
-  /** Leaves the intro screen and flies down into the hall. */
+  /** Meninggalkan layar intro dan terbang turun ke dalam aula. */
   function enter() {
     if (state.mode !== "intro") return;
     state.mode = "explore";
@@ -182,7 +182,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Changes which exhibit is under the pointer and updates its highlight.
+   * Mengganti exhibit yang berada di bawah pointer dan memperbarui sorotannya.
    *
    * @param {object|null} exhibit
    */
@@ -195,8 +195,9 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Opens an exhibit: flies the camera to it, starts the turntable rotation,
-   * and marks it as visited. The first visit also fires onFirstVisit (sparkle).
+   * Membuka sebuah exhibit: menerbangkan kamera ke sana, memulai rotasi
+   * turntable, dan menandainya sudah dikunjungi. Kunjungan pertama juga
+   * memicu onFirstVisit (sparkle).
    *
    * @param {object} exhibit
    */
@@ -215,19 +216,19 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
     const view = inspectViewFor(exhibit);
     applyOrbitLimits("inspect");
     flyTo(view.position, view.target);
-    // A slow automatic orbit around the artifact — a "turntable" animation.
+    // Orbit otomatis yang lambat mengelilingi artefak — animasi "turntable".
     controls.autoRotate = true;
     controls.autoRotateSpeed = 1.5;
     emit();
   }
 
   /**
-   * Closes the current exhibit and returns to the overview. If that was the
-   * last unvisited artifact, the visit is complete.
+   * Menutup exhibit saat ini dan kembali ke overview. Bila itu artefak terakhir
+   * yang belum dikunjungi, kunjungan selesai.
    *
-   * Allowed even while the camera is still flying in: flyTo() always starts
-   * from wherever the camera is right now, so the flight simply turns around.
-   * Ignoring Esc during the 1.2 s fly-in would feel like a broken key.
+   * Diizinkan bahkan saat kamera masih terbang masuk: flyTo() selalu mulai dari
+   * posisi kamera saat ini, jadi penerbangan hanya berbalik arah.
+   * Mengabaikan Esc selama fly-in 1,2 detik akan terasa seperti tombol rusak.
    */
   function back() {
     if (state.mode !== "inspect") return;
@@ -248,7 +249,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   /**
-   * Changes the inspected artifact's roughness (from the info-panel slider).
+   * Mengubah roughness artefak yang sedang diperiksa (dari slider di panel info).
    *
    * @param {number} value 0–1.
    */
@@ -258,7 +259,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
     emit();
   }
 
-  /** Returns everything to the very first screen, as if the page had reloaded. */
+  /** Mengembalikan semuanya ke layar paling awal, seolah halaman dimuat ulang. */
   function reset() {
     if (state.hovered) setHighlight(state.hovered, false);
     for (const exhibit of exhibits) restorePrimaryRoughness(exhibit);
@@ -269,7 +270,7 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
     state.visited.clear();
 
     flight = null;
-    controls.enabled = false; // the intro screen is not interactive
+    controls.enabled = false; // layar intro tidak interaktif
     controls.autoRotate = false;
     applyOrbitLimits("explore");
     jumpTo(VIEWS.intro);
@@ -279,13 +280,13 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
   }
 
   // ------------------------------------------------------------------
-  // PER-FRAME
+  // PER FRAME
   // ------------------------------------------------------------------
 
   /**
-   * Advances the camera flight (if any) and OrbitControls. Called once per frame.
+   * Memajukan penerbangan kamera (jika ada) dan OrbitControls. Dipanggil sekali per frame.
    *
-   * @param {number} dt Seconds since the previous frame.
+   * @param {number} dt Detik sejak frame sebelumnya.
    */
   function update(dt) {
     if (flight) {
@@ -302,12 +303,12 @@ export function createMuseum({ camera, controls, exhibits, hooks }) {
       }
     }
 
-    // Needed every frame for damping and autoRotate to work. Skipped on the
-    // intro screen, where it would pull the distant intro camera inside maxDistance.
+    // Dibutuhkan setiap frame agar damping dan autoRotate bekerja. Dilewati di
+    // layar intro, karena di sana ia akan menarik kamera intro yang jauh masuk ke dalam maxDistance.
     if (!flight && state.mode !== "intro") controls.update(dt);
   }
 
-  // Start on the intro view with the controls locked.
+  // Mulai di tampilan intro dengan controls terkunci.
   controls.enabled = false;
   applyOrbitLimits("explore");
   jumpTo(VIEWS.intro);
