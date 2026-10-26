@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Empty inline icon: stops the browser requesting /favicon.ico, whose 404 would appear as a console error. -->
+    <link rel="icon" href="data:," />
+    <title>Hall of Relics — Museum Artefak Kuno</title>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Museum 3D Hall of Relics. Arahkan kursor ke artefak lalu klik untuk memeriksanya."></canvas>
+
+    <!-- Shown while artifacts.glb downloads. -->
+    <div id="loading" class="overlay">
+      <p>Memuat koleksi… <span id="loading-percent">0%</span></p>
+    </div>
+
+    <!-- START state. -->
+    <div id="intro" class="overlay hidden">
+      <div class="card">
+        <h1>Hall of Relics</h1>
+        <p>Museum artefak kuno. Periksa kelima artefak untuk membuka seluruh pameran.</p>
+        <ul class="tips">
+          <li>Arahkan kursor ke artefak untuk menyorotnya</li>
+          <li>Klik artefak untuk memeriksanya dari dekat</li>
+          <li>Drag untuk memutar kamera, scroll untuk zoom</li>
+        </ul>
+        <button id="enter-button" type="button">Masuk Museum</button>
+      </div>
+    </div>
+
+    <!-- HUD: progress and checklist (exploration progress). -->
+    <header id="hud" class="hud hidden">
+      <h2>Hall of Relics</h2>
+      <p id="progress">0 / 5 artefak diperiksa</p>
+      <ul id="checklist"></ul>
+      <p id="hint" class="hint"></p>
+      <button id="reset-button" type="button" class="secondary">Reset (R)</button>
+    </header>
+
+    <!-- Name of the artifact under the pointer. -->
+    <div id="hover-label" class="hover-label hidden"></div>
+
+    <!-- INSPECT state: information panel. -->
+    <aside id="info-panel" class="panel hidden">
+      <p class="eyebrow">Sedang diperiksa</p>
+      <h3 id="info-title"></h3>
+      <p id="info-period" class="period"></p>
+      <p id="info-description"></p>
+      <dl>
+        <div><dt>Bahan</dt><dd id="info-material"></dd></div>
+        <div><dt>Roughness</dt><dd id="info-roughness"></dd></div>
+        <div><dt>Metalness</dt><dd id="info-metalness"></dd></div>
+      </dl>
+      <label class="slider">
+        Coba ubah roughness
+        <input id="roughness-slider" type="range" min="0" max="1" step="0.01" />
+      </label>
+      <p class="hint">0 = halus seperti cermin, 1 = kasar tanpa pantulan. Nilai dikembalikan saat keluar.</p>
+      <button id="back-button" type="button">Kembali (Esc)</button>
+    </aside>
+
+    <!-- COMPLETION state. -->
+    <div id="complete" class="overlay overlay-soft hidden">
+      <div class="card">
+        <h1>Exhibition Complete</h1>
+        <p>Semua artefak telah diperiksa. Terima kasih telah berkunjung ke Hall of Relics.</p>
+        <button id="restart-button" type="button">Jelajahi Lagi</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
