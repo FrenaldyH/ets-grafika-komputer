@@ -138,7 +138,7 @@ export function createUI({ titles, onEnter, onBack, onReset, onRoughness }) {
       elements.infoRoughness.textContent = material.roughness.toFixed(2);
       elements.infoMetalness.textContent = material.metalness.toFixed(2);
       elements.slider.value = String(material.roughness);
-    }
+    } 
   }
 
   return { setLoading, showError, hideLoading, render };

@@ -8,10 +8,11 @@ UTS Grafika Komputer (EF234504) · Three.js Interactive 3D Project · **Topik 3:
 
 **Kelompok:** _(nama/nomor kelompok)_
 
-| Nama | NRP |
-| --- | --- |
+
+| Nama                       | NRP        |
+| ---------------------------- | ------------ |
 | Frenaldy Bestabba Hasugian | 5025241156 |
-| Himawan Rakha Bhadra | 5025241028 |
+| Himawan Rakha Bhadra       | 5025241028 |
 
 ## Deskripsi
 
@@ -50,43 +51,46 @@ RESET   — tombol "Jelajahi Lagi" / R → kembali ke layar intro
 
 ## Kontrol
 
-| Input | Fungsi |
-| --- | --- |
-| Gerakkan kursor | Sorot artefak (hover) |
-| Klik kiri | Periksa artefak (inspect) |
-| Drag kiri | Orbit kamera (drag tidak ikut memilih artefak) |
-| Scroll | Zoom |
-| Slider di panel | Ubah roughness artefak yang sedang diperiksa |
-| `Esc` / tombol Kembali | Keluar dari mode inspect |
-| `R` / tombol Reset | Kembali ke kondisi awal |
+
+| Input                  | Fungsi                                         |
+| ------------------------ | ------------------------------------------------ |
+| Gerakkan kursor        | Sorot artefak (hover)                          |
+| Klik kiri              | Periksa artefak (inspect)                      |
+| Drag kiri              | Orbit kamera (drag tidak ikut memilih artefak) |
+| Scroll                 | Zoom                                           |
+| Slider di panel        | Ubah roughness artefak yang sedang diperiksa   |
+| `Esc` / tombol Kembali | Keluar dari mode inspect                       |
+| `R` / tombol Reset     | Kembali ke kondisi awal                        |
 
 ## Fitur grafika (slide 53)
 
-| Fitur | Implementasi | File |
-| --- | --- | --- |
+
+| Fitur           | Implementasi                                                                                                                                                                                   | File                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
 | **Scene graph** | Tiap exhibit adalah `Group` { pedestal, plakat, spotlight, hit area, artefak }. Cincin dalam astrolab adalah *child* cincin luar, jadi gerakannya gabungan rotasi parent dan rotasinya sendiri | `exhibits.js`, `build-artifacts.mjs` |
-| **Transform** | Posisi, rotasi (`lookAt` ke pengunjung), dan scale tiap exhibit | `exhibits.js` |
-| **GLB** | Kelima artefak dimuat dari `public/models/artifacts.glb` dengan `GLTFLoader` dan indikator persen loading | `exhibits.js` |
-| **PBR** | `MeshStandardMaterial` dengan roughness 0,25 (emas) sampai 0,95 (batu), metalness 0 sampai 1. Slider roughness memperlihatkan pengaruhnya secara langsung | `build-artifacts.mjs`, `exhibits.js` |
-| **Lighting** | `HemisphereLight` + `DirectionalLight` (skylight) + 5 `SpotLight` (satu per exhibit, menguat saat hover) | `scene.js`, `exhibits.js` |
-| **Shadow** | Skylight satu-satunya penghasil shadow (2048², PCF); artefak, pedestal, dan pilar `castShadow`; lantai, dinding, pedestal `receiveShadow` | `scene.js` |
-| **Environment** | `RoomEnvironment` + `PMREMGenerator` sebagai environment map (pantulan pada logam), ditambah `Fog` | `scene.js` |
-| **Animation** | (1) clip GLB `AstrolabeSpin` via `AnimationMixer`; (2) kamera terbang dengan easing; (3) turntable `autoRotate` saat inspect; (4) halo berdenyut; (5) partikel | `museum.js`, `effects.js` |
-| **Raycasting** | `THREE.Raycaster` untuk hover dan klik, diuji ke hit area tak terlihat per artefak | `interaction.js` |
-| **VFX** | Debu melayang (`Points`), halo cincin additive, percikan emas saat pemeriksaan pertama, confetti saat selesai | `effects.js` |
+| **Transform**   | Posisi, rotasi (`lookAt` ke pengunjung), dan scale tiap exhibit                                                                                                                                | `exhibits.js`                        |
+| **GLB**         | Kelima artefak dimuat dari `public/models/artifacts.glb` dengan `GLTFLoader` dan indikator persen loading                                                                                      | `exhibits.js`                        |
+| **PBR**         | `MeshStandardMaterial` dengan roughness 0,25 (emas) sampai 0,95 (batu), metalness 0 sampai 1. Slider roughness memperlihatkan pengaruhnya secara langsung                                      | `build-artifacts.mjs`, `exhibits.js` |
+| **Lighting**    | `HemisphereLight` + `DirectionalLight` (skylight) + 5 `SpotLight` (satu per exhibit, menguat saat hover)                                                                                       | `scene.js`, `exhibits.js`            |
+| **Shadow**      | Skylight satu-satunya penghasil shadow (2048², PCF); artefak, pedestal, dan pilar `castShadow`; lantai, dinmodeding, pedestal `receiveShadow`                                                 | `scene.js`                           |
+| **Environment** | `RoomEnvironment` + `PMREMGenerator` sebagai environment map (pantulan pada logam), ditambah `Fog`                                                                                             | `scene.js`                           |
+| **Animation**   | (1) clip GLB `AstrolabeSpin` via `AnimationMixer`; (2) kamera terbang dengan easing; (3) turntable `autoRotate` saat inspect; (4) halo berdenyut; (5) partikel                                 | `museum.js`, `effects.js`            |
+| **Raycasting**  | `THREE.Raycaster` untuk hover dan klik, diuji ke hit area tak terlihat per artefak                                                                                                             | `interaction.js`                     |
+| **VFX**         | Debu melayang (`Points`), halo cincin additive, percikan emas saat pemeriksaan pertama, confetti saat selesai                                                                                  | `effects.js`                         |
 
 Syarat minimum UTS dan pemenuhannya:
 
-| Syarat (slide) | Minimum | Di project ini |
-| --- | --- | --- |
-| Jenis object (14) | 3 | artefak (5 jenis), pedestal, plakat, pilar, dinding |
-| Hierarchy (15) | 1 | 5 exhibit group + gimbal bersarang astrolab |
-| GLB (16) | 1 | 1 file berisi 5 artefak + 1 clip animasi |
-| Light (18) | ambient + 1 | hemisphere + directional + 5 spot |
-| Shadow (19) | 1 cast + 1 receive | banyak |
-| Animation (21) | 2 jenis | 5 jenis |
-| Interaction (22) | 3, satu Raycaster | hover, klik/inspect, orbit, slider, kembali, reset |
-| VFX (25) | 2 | 4 |
+
+| Syarat (slide)    | Minimum            | Di project ini                                      |
+| ------------------- | -------------------- | ----------------------------------------------------- |
+| Jenis object (14) | 3                  | artefak (5 jenis), pedestal, plakat, pilar, dinding |
+| Hierarchy (15)    | 1                  | 5 exhibit group + gimbal bersarang astrolab         |
+| GLB (16)          | 1                  | 1 file berisi 5 artefak + 1 clip animasi            |
+| Light (18)        | ambient + 1        | hemisphere + directional + 5 spot                   |
+| Shadow (19)       | 1 cast + 1 receive | banyak                                              |
+| Animation (21)    | 2 jenis            | 5 jenis                                             |
+| Interaction (22)  | 3, satu Raycaster  | hover, klik/inspect, orbit, slider, kembali, reset  |
+| VFX (25)          | 2                  | 4                                                   |
 
 ## Struktur project
 
@@ -133,23 +137,25 @@ npm install
 npm run dev
 ```
 
-Buka alamat yang dicetak Vite (biasanya <http://localhost:5173>).
+Buka alamat yang dicetak Vite (biasanya [http://localhost:5173](http://localhost:5173)).
 
-| Perintah | Kegunaan |
-| --- | --- |
-| `npm run dev` | Server development |
+
+| Perintah               | Kegunaan                                              |
+| ------------------------ | ------------------------------------------------------- |
+| `npm run dev`          | Server development                                    |
 | `npm run build:models` | Membuat ulang `public/models/artifacts.glb` dari kode |
-| `npm run build` | Build produksi ke `dist/` |
-| `npm run preview` | Menjalankan hasil build |
+| `npm run build`        | Build produksi ke `dist/`                             |
+| `npm run preview`      | Menjalankan hasil build                               |
 
 ## Asset Credits
 
-| Asset | Pembuat | Sumber | Lisensi |
-| --- | --- | --- | --- |
-| Lima artefak (`artifacts.glb`) dan clip animasinya | Kelompok sendiri | Dibuat dari kode, `scripts/build-artifacts.mjs` | Karya sendiri |
-| Aula, pedestal, plakat, pilar | Kelompok sendiri | Geometri Three.js di `scene.js`, `exhibits.js` | Karya sendiri |
-| Environment map | three.js authors | `RoomEnvironment` (addon resmi three.js, dibuat dari kode, tanpa file HDRI) | MIT |
-| Library | three.js authors | <https://threejs.org> (`three@0.182.0`, termasuk `GLTFLoader`, `GLTFExporter`, `OrbitControls`) | MIT |
+
+| Asset                                              | Pembuat          | Sumber                                                                                                               | Lisensi       |
+| ---------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------- |
+| Lima artefak (`artifacts.glb`) dan clip animasinya | Kelompok sendiri | Dibuat dari kode, `scripts/build-artifacts.mjs`                                                                      | Karya sendiri |
+| Aula, pedestal, plakat, pilar                      | Kelompok sendiri | Geometri Three.js di `scene.js`, `exhibits.js`                                                                       | Karya sendiri |
+| Environment map                                    | three.js authors | `RoomEnvironment` (addon resmi three.js, dibuat dari kode, tanpa file HDRI)                                          | MIT           |
+| Library                                            | three.js authors | [https://threejs.org](https://threejs.org) (`three@0.182.0`, termasuk `GLTFLoader`, `GLTFExporter`, `OrbitControls`) | MIT           |
 
 Tidak ada model, texture, HDRI, suara, ikon, atau font yang diunduh dari luar.
 
@@ -171,23 +177,24 @@ Tidak ada model, texture, HDRI, suara, ikon, atau font yang diunduh dari luar.
 
 ## Pembagian kontribusi
 
-| Anggota | Bagian | Konsep yang dijelaskan di video |
-| --- | --- | --- |
-| Frenaldy | `interaction.js`, `museum.js`, `effects.js`, `ui.js` | raycasting, alur interaksi, kamera fokus, animasi, VFX, HUD, completion |
-| Himawan | `scene.js`, `exhibits.js`, `scripts/build-artifacts.mjs` | scene graph, PBR, lighting, shadow, GLB, environment map |
+
+| Anggota  | Bagian                                                   | Konsep yang dijelaskan di video                                         |
+| ---------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Frenaldy | `interaction.js`, `museum.js`, `effects.js`, `ui.js`     | raycasting, alur interaksi, kamera fokus, animasi, VFX, HUD, completion |
+| Himawan  | `scene.js`, `exhibits.js`, `scripts/build-artifacts.mjs` | scene graph, PBR, lighting, shadow, GLB, environment map                |
 
 ## Checklist akhir (slide 61)
 
-- [x] Project berjalan (`npm install` + `npm run dev`)
-- [x] Asset tidak missing (GLB dimuat, ada pesan jelas bila gagal)
-- [x] Console tanpa error dan warning
-- [x] Interaction bekerja (hover, klik, orbit, slider, Esc, reset)
-- [x] Objective jelas (checklist 5 artefak di HUD)
-- [x] Completion bekerja (5/5 → overlay + confetti)
-- [x] Shadow terlihat
-- [x] VFX bekerja
-- [x] README lengkap
-- [x] Credits lengkap
+- [X]  Project berjalan (`npm install` + `npm run dev`)
+- [X]  Asset tidak missing (GLB dimuat, ada pesan jelas bila gagal)
+- [X]  Console tanpa error dan warning
+- [X]  Interaction bekerja (hover, klik, orbit, slider, Esc, reset)
+- [X]  Objective jelas (checklist 5 artefak di HUD)
+- [X]  Completion bekerja (5/5 → overlay + confetti)
+- [X]  Shadow terlihat
+- [X]  VFX bekerja
+- [X]  README lengkap
+- [X]  Credits lengkap
 
 ## Catatan debugging dan pengujian
 
